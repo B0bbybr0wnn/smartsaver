@@ -245,35 +245,89 @@
   </div>
 
   <!-- MORE -->
-  <div class="screen" id="screen-more">
-    <div class="header"><h1>More</h1></div>
+<div class="screen" id="screen-more">
+  <div class="header"><h1>More</h1></div>
 
-    <div class="card">
-      <div class="card-title">Preferences</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #334155;">
-        <span style="font-size:14px;">Currency</span>
-        <span style="font-size:14px;color:#38bdf8;font-weight:600;" id="more-currency">USD</span>
+  <!-- Profile -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:#0f172a;border:1px solid #334155;display:flex;align-items:center;justify-content:center;color:#38bdf8;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
-        <span style="font-size:14px;">Interests</span>
-        <span style="font-size:13px;color:#94a3b8;" id="more-interests">—</span>
+      <div>
+        <div style="font-size:16px;font-weight:700;">Guest user</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Data stored on this device</div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">About</div>
-      <div style="font-size:13px;color:#94a3b8;line-height:1.6;">
-        SmartSaver — your personal money decision toolkit.<br>
-        Save. Plan. Calculate. Decide.<br><br>
-        All data stays on your device. No accounts, no tracking.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Danger zone</div>
-      <button class="btn" style="background:#1e293b;color:#ef4444;" onclick="resetApp()">Reset all data</button>
     </div>
   </div>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-title">Your activity</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Goals</div>
+        <div style="font-size:20px;font-weight:700;margin-top:4px;color:#38bdf8;" id="more-goals-count">0</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Decisions</div>
+        <div style="font-size:20px;font-weight:700;margin-top:4px;color:#38bdf8;" id="more-decisions-count">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preferences -->
+  <div class="card">
+    <div class="card-title">Preferences</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #334155;">
+      <span style="font-size:14px;">Currency</span>
+      <span style="font-size:14px;color:#38bdf8;font-weight:600;" id="more-currency">USD</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+      <span style="font-size:14px;">Interests</span>
+      <span style="font-size:13px;color:#94a3b8;" id="more-interests">—</span>
+    </div>
+  </div>
+
+  <!-- Data -->
+  <div class="card">
+    <div class="card-title">Your data</div>
+    <button class="btn" style="background:#1e293b;color:#38bdf8;margin-bottom:10px;" onclick="exportData()">Export data</button>
+    <button class="btn" style="background:#1e293b;color:#38bdf8;" onclick="document.getElementById('import-file').click()">Import data</button>
+    <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)" />
+    <div style="font-size:12px;color:#64748b;margin-top:10px;line-height:1.5;">Backup your goals and decisions to a file. Restore anytime.</div>
+  </div>
+
+  <!-- Help -->
+  <div class="card">
+    <div class="card-title">How SmartSaver works</div>
+    <div style="font-size:13px;color:#cbd5e1;line-height:1.7;">
+      <p style="margin-bottom:8px;"><b style="color:#38bdf8;">Decide</b> — Check if you can afford a purchase before buying.</p>
+      <p style="margin-bottom:8px;"><b style="color:#38bdf8;">Save</b> — Set goals and track your progress.</p>
+      <p style="margin-bottom:8px;"><b style="color:#38bdf8;">Tools</b> — Calculators for savings, debt, budgets and more.</p>
+      <p><b style="color:#38bdf8;">Your data</b> — Everything stays on your device. No accounts, no tracking.</p>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div class="card">
+    <div class="card-title">About</div>
+    <div style="font-size:13px;color:#94a3b8;line-height:1.6;">
+      SmartSaver — your personal money decision toolkit.<br>
+      Save. Plan. Calculate. Decide.<br><br>
+      Version 1.0
+    </div>
+  </div>
+
+  <!-- Reset -->
+  <div class="card">
+    <div class="card-title">Danger zone</div>
+    <button class="btn" style="background:#1e293b;color:#ef4444;" onclick="resetApp()">Reset all data</button>
+  </div>
+        </div>
 
   <!-- BOTTOM NAV -->
   <nav class="nav" id="nav">
