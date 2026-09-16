@@ -150,18 +150,61 @@ function renderHomeDecisions() {
 function renderMore() {
   const cEl = document.getElementById('more-currency');
   const iEl = document.getElementById('more-interests');
+  const gcEl = document.getElementById('more-goals-count');
+  const dcEl = document.getElementById('more-decisions-count');
   if (cEl) cEl.textContent = state.currency;
   if (iEl) {
     if (state.interests.length === 0) iEl.textContent = '—';
     else iEl.textContent = state.interests.length + ' selected';
   }
+  if (gcEl) gcEl.textContent = state.goals.length;
+  if (dcEl) dcEl.textContent = state.decisions.length;
+}
+
+function exportData() {
+  const data = {
+    goals: state.goals,
+    decisions: state.decisions,
+    snapshot: state.snapshot,
+    currency: state.currency,
+    interests: state.interests,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'smartsaver-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.goals) { state.goals = data.goals; saveGoals(); }
+      if (data.decisions) { state.decisions = data.decisions; saveDecisions(); }
+      if (data.snapshot) { state.snapshot = data.snapshot; localStorage.setItem('ss_snapshot', JSON.stringify(data.snapshot)); }
+      if (data.currency) { state.currency = data.currency; localStorage.setItem('ss_currency', data.currency); }
+      if (data.interests) { state.interests = data.interests; localStorage.setItem('ss_interests', JSON.stringify(data.interests)); }
+      alert('Data imported successfully.');
+      renderMore();
+    } catch (err) {
+      alert('Could not read that file. Make sure it is a SmartSaver backup.');
+    }
+  };
+  reader.readAsText(file);
 }
 
 function resetApp() {
   if (!confirm('This will erase all your goals, decisions and settings. Continue?')) return;
   localStorage.clear();
   location.reload();
-}
+                        }
 
 // ============ DECIDE ============
 let lastDecision = null;
