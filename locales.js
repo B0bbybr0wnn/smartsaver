@@ -321,4 +321,107 @@ function applyTranslations() {
 }
 
 window.t = t;
+// ============ INTEREST NAMES ============
+const INTEREST_KEYS = {
+  'Saving money': { de: 'Geld sparen', es: 'Ahorrar dinero' },
+  'Managing my budget': { de: 'Mein Budget verwalten', es: 'Gestionar mi presupuesto' },
+  'Making better spending decisions': { de: 'Bessere Ausgabeentscheidungen', es: 'Mejores decisiones de gasto' },
+  'Paying off debt': { de: 'Schulden abbauen', es: 'Pagar deudas' },
+  'Building an emergency fund': { de: 'Notfallfonds aufbauen', es: 'Crear un fondo de emergencia' },
+  'Tracking my financial goals': { de: 'Finanzielle Ziele verfolgen', es: 'Seguir mis metas financieras' }
+};
+function ti(interest) {
+  const lang = localStorage.getItem('ss_lang') || 'en';
+  if (lang === 'en') return interest;
+  const entry = INTEREST_KEYS[interest];
+  return (entry && entry[lang]) || interest;
+}
+window.ti = ti;
+
+// ============ VERDICTS ============
+const VERDICTS = {
+  not_yet: { en: 'Not yet', de: 'Noch nicht', es: 'Aún no' },
+  risky: { en: 'Risky', de: 'Riskant', es: 'Riesgoso' },
+  yes_can: { en: 'Yes, you can', de: 'Ja, du kannst', es: 'Sí, puedes' },
+  enter_numbers: { en: 'Enter your numbers', de: 'Zahlen eingeben', es: 'Introduce los números' },
+  fetch_rate: { en: 'Fetching rate...', de: 'Kurs wird geladen...', es: 'Obteniendo tipo...' },
+  rate_fail: { en: 'Could not fetch rate. Check your internet connection.', de: 'Kurs konnte nicht geladen werden. Prüfe deine Verbindung.', es: 'No se pudo obtener el tipo. Verifica tu conexión.' }
+};
+function tv(key) {
+  const lang = localStorage.getItem('ss_lang') || 'en';
+  const e = VERDICTS[key];
+  return e ? (e[lang] || e.en) : key;
+}
+window.tv = tv;
+
+// ============ TOASTS ============
+const TOASTS = {
+  saved: { en: 'Saved', de: 'Gespeichert', es: 'Guardado' },
+  goal_created: { en: 'Goal created', de: 'Ziel erstellt', es: 'Meta creada' },
+  goal_deleted: { en: 'Goal deleted', de: 'Ziel gelöscht', es: 'Meta eliminada' },
+  template_saved: { en: 'Template saved', de: 'Vorlage gespeichert', es: 'Plantilla guardada' },
+  template_deleted: { en: 'Template deleted', de: 'Vorlage gelöscht', es: 'Plantilla eliminada' },
+  template_deleted2: { en: 'Deleted', de: 'Gelöscht', es: 'Eliminado' },
+  backup_downloaded: { en: 'Backup downloaded', de: 'Backup heruntergeladen', es: 'Copia descargada' },
+  data_imported: { en: 'Data imported', de: 'Daten importiert', es: 'Datos importados' },
+  could_not_read: { en: 'Could not read that file', de: 'Datei konnte nicht gelesen werden', es: 'No se pudo leer el archivo' },
+  enter_amount: { en: 'Enter an amount', de: 'Betrag eingeben', es: 'Introduce una cantidad' },
+  enter_name_target: { en: 'Enter a name and target', de: 'Name und Ziel eingeben', es: 'Introduce nombre y objetivo' },
+  preferences_saved: { en: 'Preferences saved', de: 'Einstellungen gespeichert', es: 'Preferencias guardadas' }
+};
+function tt(key, fallback) {
+  const lang = localStorage.getItem('ss_lang') || 'en';
+  const e = TOASTS[key];
+  if (!e) return fallback || key;
+  return e[lang] || e.en;
+}
+window.tt = tt;
+
+// ============ SUGGESTIONS ============
+const SUGGESTIONS = {
+  pace_target: {
+    en: 'To hit <b>{name}</b> by your target date, save about <b>{amt} per week.</b>',
+    de: 'Um <b>{name}</b> bis zum Zieldatum zu erreichen, spare etwa <b>{amt} pro Woche.</b>',
+    es: 'Para alcanzar <b>{name}</b> antes de tu fecha objetivo, ahorra <b>{amt} por semana.</b>'
+  },
+  pace_current: {
+    en: 'At your current pace, you\'ll reach <b>{name}</b> around <b>{date}</b>.',
+    de: 'Bei deinem aktuellen Tempo erreichst du <b>{name}</b> etwa im <b>{date}</b>.',
+    es: 'A tu ritmo actual, alcanzarás <b>{name}</b> alrededor de <b>{date}</b>.'
+  },
+  buffer_good: {
+    en: 'Your monthly buffer is <b>{amt}</b>. Consider putting half into a savings goal.',
+    de: 'Dein monatlicher Puffer ist <b>{amt}</b>. Erwäge, die Hälfte in ein Sparziel zu stecken.',
+    es: 'Tu colchón mensual es <b>{amt}</b>. Considera poner la mitad en una meta de ahorro.'
+  },
+  buffer_negative: {
+    en: 'Expenses exceed income by <b>{amt}</b>. Try trimming one category.',
+    de: 'Ausgaben übersteigen das Einkommen um <b>{amt}</b>. Versuche, eine Kategorie zu kürzen.',
+    es: 'Los gastos superan los ingresos en <b>{amt}</b>. Intenta recortar una categoría.'
+  },
+  spent_more: {
+    en: 'You spent <b>{amt} more</b> this week than last week.',
+    de: 'Du hast diese Woche <b>{amt} mehr</b> ausgegeben als letzte Woche.',
+    es: 'Has gastado <b>{amt} más</b> esta semana que la anterior.'
+  },
+  spent_less: {
+    en: 'Nice — you spent <b>{amt} less</b> this week than last week.',
+    de: 'Super — du hast diese Woche <b>{amt} weniger</b> ausgegeben als letzte Woche.',
+    es: 'Bien — has gastado <b>{amt} menos</b> esta semana que la anterior.'
+  },
+  no_activity: {
+    en: 'You haven\'t logged anything in <b>{days} days</b>.',
+    de: 'Du hast seit <b>{days} Tagen</b> nichts erfasst.',
+    es: 'No has registrado nada en <b>{days} días</b>.'
+  }
+};
+function ts(key, vars) {
+  const lang = localStorage.getItem('ss_lang') || 'en';
+  const e = SUGGESTIONS[key];
+  if (!e) return '';
+  let out = e[lang] || e.en;
+  for (const k in vars) out = out.replace('{' + k + '}', vars[k]);
+  return out;
+}
+window.ts = ts;
 window.applyTranslations = applyTranslations;
