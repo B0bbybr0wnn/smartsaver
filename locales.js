@@ -1,0 +1,312 @@
+// ============ TRANSLATIONS ============
+const LOCALES = {
+  en: {
+    brand_tagline: 'Before you make a money decision, ask SmartSaver.',
+    choose_currency: 'Choose your currency',
+    continue: 'Continue',
+    welcome_title: 'Welcome',
+    welcome_sub: 'What would you like SmartSaver to help you with?<br>Pick as many as you like.',
+    finish_setup: 'Finish setup',
+    ready_title: "You're all set",
+    ready_sub: 'SmartSaver is ready. Start by checking a purchase or setting a savings goal.',
+    get_started: 'Get started',
+
+    // Nav
+    nav_home: 'Home',
+    nav_save: 'Save',
+    nav_decide: 'Decide',
+    nav_tools: 'Tools',
+    nav_more: 'More',
+
+    // Home
+    greeting_morning: 'Good morning',
+    greeting_afternoon: 'Good afternoon',
+    greeting_evening: 'Good evening',
+    home_overview: 'Overview',
+    check_purchase: 'Check a purchase',
+    check_purchase_sub: 'Before you buy, see if you can afford it',
+    today: 'Today',
+    spent_today: 'Spent today',
+    this_week: 'This week',
+    suggestions: 'Suggestions',
+    amount: 'Amount',
+    note_optional: 'Note (optional)',
+    add: 'Add',
+    balance: 'Balance',
+    available: 'Available',
+    income: 'Income',
+    essentials: 'Essentials',
+    nothing_logged_week: 'Nothing logged this week yet.',
+
+    // Save
+    save_title: 'Save',
+    new_goal: 'New savings goal',
+    new_goal_title: 'New goal',
+    new_goal_sub: 'What are you saving for?',
+    goal_name: 'Goal name',
+    target_amount: 'Target amount',
+    already_saved: 'Already saved (optional)',
+    target_date: 'Target date (optional)',
+    save_goal_btn: 'Save goal',
+    cancel: 'Cancel',
+    add_money: 'Add money',
+    delete: 'Delete',
+    saved: 'saved',
+    to_go: 'to go',
+    no_goals: 'No goals yet. Tap below to start one.',
+
+    // Decide
+    decide_title: 'Decide',
+    item_name: 'Item or purchase name',
+    price: 'Price',
+    current_balance: 'Your current balance',
+    monthly_income: 'Monthly income',
+    monthly_expenses: 'Essential monthly expenses',
+    can_afford: 'Can I afford this?',
+    save_btn: 'Save',
+    template_btn: 'Template',
+    share_btn: 'Share',
+    quick_start: 'Quick start',
+
+    // Tools
+    tools_title: 'Tools',
+    tool_savings: 'Savings calculator',
+    tool_budget: 'Budget calculator',
+    tool_debt: 'Debt payoff calculator',
+    tool_discount: 'Discount calculator',
+    tool_percent: 'Percentage calculator',
+    tool_emergency: 'Emergency fund calculator',
+    tool_tip: 'Tip calculator',
+    tool_convert: 'Currency converter',
+    calculate: 'Calculate',
+    convert: 'Convert',
+
+    // More
+    more_title: 'More',
+    preferences: 'Preferences',
+    your_data: 'Your data',
+    money_tips: 'Money tips',
+    help: 'Help',
+    whats_new: "What's new",
+    about: 'About',
+    privacy: 'Privacy',
+    reset_data: 'Reset all data',
+    appearance: 'Appearance',
+    theme: 'Theme',
+    language: 'Language',
+    currency: 'Currency',
+    interests: 'Interests',
+    save_changes: 'Save changes'
+  },
+  de: {
+    brand_tagline: 'Bevor du eine Geldentscheidung triffst, frag SmartSaver.',
+    choose_currency: 'Wähle deine Währung',
+    continue: 'Weiter',
+    welcome_title: 'Willkommen',
+    welcome_sub: 'Wobei soll SmartSaver dir helfen?<br>Wähle so viele du möchtest.',
+    finish_setup: 'Einrichtung abschließen',
+    ready_title: 'Alles bereit',
+    ready_sub: 'SmartSaver ist bereit. Starte mit einer Kaufprüfung oder einem Sparziel.',
+    get_started: 'Loslegen',
+
+    nav_home: 'Start',
+    nav_save: 'Sparen',
+    nav_decide: 'Entscheiden',
+    nav_tools: 'Werkzeuge',
+    nav_more: 'Mehr',
+
+    greeting_morning: 'Guten Morgen',
+    greeting_afternoon: 'Guten Tag',
+    greeting_evening: 'Guten Abend',
+    home_overview: 'Übersicht',
+    check_purchase: 'Kauf prüfen',
+    check_purchase_sub: 'Sieh vor dem Kauf, ob du es dir leisten kannst',
+    today: 'Heute',
+    spent_today: 'Heute ausgegeben',
+    this_week: 'Diese Woche',
+    suggestions: 'Vorschläge',
+    amount: 'Betrag',
+    note_optional: 'Notiz (optional)',
+    add: 'Hinzufügen',
+    balance: 'Kontostand',
+    available: 'Verfügbar',
+    income: 'Einkommen',
+    essentials: 'Grundbedarf',
+    nothing_logged_week: 'Diese Woche noch nichts erfasst.',
+
+    save_title: 'Sparen',
+    new_goal: 'Neues Sparziel',
+    new_goal_title: 'Neues Ziel',
+    new_goal_sub: 'Wofür sparst du?',
+    goal_name: 'Zielname',
+    target_amount: 'Zielbetrag',
+    already_saved: 'Bereits gespart (optional)',
+    target_date: 'Zieldatum (optional)',
+    save_goal_btn: 'Ziel speichern',
+    cancel: 'Abbrechen',
+    add_money: 'Geld hinzufügen',
+    delete: 'Löschen',
+    saved: 'gespart',
+    to_go: 'übrig',
+    no_goals: 'Noch keine Ziele. Tippe unten, um zu starten.',
+
+    decide_title: 'Entscheiden',
+    item_name: 'Artikel- oder Kaufname',
+    price: 'Preis',
+    current_balance: 'Aktueller Kontostand',
+    monthly_income: 'Monatliches Einkommen',
+    monthly_expenses: 'Wesentliche monatliche Ausgaben',
+    can_afford: 'Kann ich mir das leisten?',
+    save_btn: 'Speichern',
+    template_btn: 'Vorlage',
+    share_btn: 'Teilen',
+    quick_start: 'Schnellstart',
+
+    tools_title: 'Werkzeuge',
+    tool_savings: 'Sparrechner',
+    tool_budget: 'Budgetrechner',
+    tool_debt: 'Schulden-Tilgungsrechner',
+    tool_discount: 'Rabattrechner',
+    tool_percent: 'Prozentrechner',
+    tool_emergency: 'Notfallfonds-Rechner',
+    tool_tip: 'Trinkgeldrechner',
+    tool_convert: 'Währungsrechner',
+    calculate: 'Berechnen',
+    convert: 'Umrechnen',
+
+    more_title: 'Mehr',
+    preferences: 'Einstellungen',
+    your_data: 'Deine Daten',
+    money_tips: 'Geld-Tipps',
+    help: 'Hilfe',
+    whats_new: 'Neuigkeiten',
+    about: 'Über',
+    privacy: 'Datenschutz',
+    reset_data: 'Alle Daten zurücksetzen',
+    appearance: 'Erscheinungsbild',
+    theme: 'Design',
+    language: 'Sprache',
+    currency: 'Währung',
+    interests: 'Interessen',
+    save_changes: 'Änderungen speichern'
+  },
+  es: {
+    brand_tagline: 'Antes de tomar una decisión financiera, pregúntale a SmartSaver.',
+    choose_currency: 'Elige tu moneda',
+    continue: 'Continuar',
+    welcome_title: 'Bienvenido',
+    welcome_sub: '¿En qué quieres que SmartSaver te ayude?<br>Elige las que quieras.',
+    finish_setup: 'Finalizar configuración',
+    ready_title: 'Todo listo',
+    ready_sub: 'SmartSaver está listo. Comienza revisando una compra o creando una meta de ahorro.',
+    get_started: 'Comenzar',
+
+    nav_home: 'Inicio',
+    nav_save: 'Ahorrar',
+    nav_decide: 'Decidir',
+    nav_tools: 'Herramientas',
+    nav_more: 'Más',
+
+    greeting_morning: 'Buenos días',
+    greeting_afternoon: 'Buenas tardes',
+    greeting_evening: 'Buenas noches',
+    home_overview: 'Resumen',
+    check_purchase: 'Revisar una compra',
+    check_purchase_sub: 'Antes de comprar, mira si puedes pagarlo',
+    today: 'Hoy',
+    spent_today: 'Gastado hoy',
+    this_week: 'Esta semana',
+    suggestions: 'Sugerencias',
+    amount: 'Cantidad',
+    note_optional: 'Nota (opcional)',
+    add: 'Añadir',
+    balance: 'Saldo',
+    available: 'Disponible',
+    income: 'Ingresos',
+    essentials: 'Esenciales',
+    nothing_logged_week: 'Aún no hay nada registrado esta semana.',
+
+    save_title: 'Ahorrar',
+    new_goal: 'Nueva meta de ahorro',
+    new_goal_title: 'Nueva meta',
+    new_goal_sub: '¿Para qué estás ahorrando?',
+    goal_name: 'Nombre de la meta',
+    target_amount: 'Cantidad objetivo',
+    already_saved: 'Ya ahorrado (opcional)',
+    target_date: 'Fecha objetivo (opcional)',
+    save_goal_btn: 'Guardar meta',
+    cancel: 'Cancelar',
+    add_money: 'Añadir dinero',
+    delete: 'Eliminar',
+    saved: 'ahorrado',
+    to_go: 'restante',
+    no_goals: 'Aún no hay metas. Toca abajo para empezar.',
+
+    decide_title: 'Decidir',
+    item_name: 'Nombre del artículo o compra',
+    price: 'Precio',
+    current_balance: 'Saldo actual',
+    monthly_income: 'Ingreso mensual',
+    monthly_expenses: 'Gastos mensuales esenciales',
+    can_afford: '¿Puedo permitírmelo?',
+    save_btn: 'Guardar',
+    template_btn: 'Plantilla',
+    share_btn: 'Compartir',
+    quick_start: 'Inicio rápido',
+
+    tools_title: 'Herramientas',
+    tool_savings: 'Calculadora de ahorro',
+    tool_budget: 'Calculadora de presupuesto',
+    tool_debt: 'Calculadora de deudas',
+    tool_discount: 'Calculadora de descuentos',
+    tool_percent: 'Calculadora de porcentajes',
+    tool_emergency: 'Calculadora de fondo de emergencia',
+    tool_tip: 'Calculadora de propinas',
+    tool_convert: 'Conversor de divisas',
+    calculate: 'Calcular',
+    convert: 'Convertir',
+
+    more_title: 'Más',
+    preferences: 'Preferencias',
+    your_data: 'Tus datos',
+    money_tips: 'Consejos de dinero',
+    help: 'Ayuda',
+    whats_new: 'Novedades',
+    about: 'Acerca de',
+    privacy: 'Privacidad',
+    reset_data: 'Restablecer todos los datos',
+    appearance: 'Apariencia',
+    theme: 'Tema',
+    language: 'Idioma',
+    currency: 'Moneda',
+    interests: 'Intereses',
+    save_changes: 'Guardar cambios'
+  }
+};
+
+function t(key) {
+  const lang = localStorage.getItem('ss_lang') || 'en';
+  const dict = LOCALES[lang] || LOCALES.en;
+  return dict[key] || LOCALES.en[key] || key;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const html = el.getAttribute('data-i18n-html') === 'true';
+    const val = t(key);
+    if (html) el.innerHTML = val;
+    else el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+  });
+  const langLabel = document.getElementById('lang-label');
+  if (langLabel) {
+    const lang = localStorage.getItem('ss_lang') || 'en';
+    langLabel.textContent = lang.toUpperCase();
+  }
+}
+
+window.t = t;
+window.applyTranslations = applyTranslations;
