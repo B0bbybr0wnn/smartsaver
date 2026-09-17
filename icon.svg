@@ -1,77 +1,106 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#050B16"/>
-      <stop offset="100%" stop-color="#101C30"/>
+    <linearGradient id="black" x1="80" y1="40" x2="430" y2="470">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.45" stop-color="#020617"/>
+      <stop offset="1" stop-color="#000000"/>
     </linearGradient>
 
-    <linearGradient id="logo" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#2563EB"/>
-      <stop offset="55%" stop-color="#38BDF8"/>
-      <stop offset="100%" stop-color="#67E8F9"/>
+    <linearGradient id="silverBlue" x1="110" y1="390" x2="410" y2="100">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.25" stop-color="#dbeafe"/>
+      <stop offset="0.52" stop-color="#60a5fa"/>
+      <stop offset="0.78" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#ffffff"/>
     </linearGradient>
 
-    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="12" stdDeviation="14"
-                    flood-color="#000000" flood-opacity="0.35"/>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#60a5fa" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="14" stdDeviation="12"
+        flood-color="#000000" flood-opacity="0.65"/>
     </filter>
   </defs>
 
-  <!-- Premium app background -->
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <!-- Glossy black app tile -->
+  <rect width="512" height="512" rx="118" fill="url(#black)"/>
 
-  <!-- Subtle inner panel -->
-  <rect x="28" y="28" width="456" height="456" rx="94"
-        fill="none"
-        stroke="#1E3A5F"
-        stroke-width="2"
-        opacity="0.55"/>
+  <!-- Premium blue halo -->
+  <circle cx="256" cy="256" r="181"
+    fill="none"
+    stroke="#2563eb"
+    stroke-width="2"
+    opacity="0.22"/>
 
-  <!-- SMARTSAVER monogram -->
+  <!-- CUSTOM SMART S -->
   <g filter="url(#shadow)">
 
-    <!-- Upper S curve -->
+    <!-- Main S -->
     <path
-      d="M356 178
-         C333 151 299 137 258 137
-         C201 137 160 168 160 215
-         C160 260 195 281 251 296"
+      d="M363 168
+         C337 140 301 126 260 126
+         C197 126 151 163 151 215
+         C151 267 190 289 250 305
+         C291 316 309 329 309 351
+         C309 377 286 393 253 393
+         C215 393 184 379 157 352"
       fill="none"
-      stroke="url(#logo)"
-      stroke-width="42"
-      stroke-linecap="round"/>
+      stroke="url(#silverBlue)"
+      stroke-width="48"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      filter="url(#glow)"/>
 
-    <!-- Lower S curve -->
+    <!-- Inner highlight -->
     <path
-      d="M251 296
-         C306 311 341 331 341 372
-         C341 417 299 443 250 443
-         C207 443 171 428 146 397"
+      d="M357 163
+         C331 139 299 130 260 130"
       fill="none"
-      stroke="url(#logo)"
-      stroke-width="42"
-      stroke-linecap="round"/>
+      stroke="#ffffff"
+      stroke-width="7"
+      stroke-linecap="round"
+      opacity="0.8"/>
 
-    <!-- Smart upward accent -->
+    <!-- Smart upward cut -->
     <path
-      d="M334 111
-         L392 111
-         L392 169"
+      d="M333 106
+         L402 106
+         L402 175"
       fill="none"
-      stroke="#67E8F9"
-      stroke-width="16"
+      stroke="url(#silverBlue)"
+      stroke-width="18"
       stroke-linecap="round"
       stroke-linejoin="round"/>
 
     <path
-      d="M392 111 L326 177"
+      d="M402 106 L325 183"
       fill="none"
-      stroke="#67E8F9"
-      stroke-width="16"
+      stroke="url(#silverBlue)"
+      stroke-width="18"
       stroke-linecap="round"/>
+
   </g>
 
-  <!-- Small brand detail -->
-  <circle cx="126" cy="126" r="7" fill="#38BDF8"/>
-  <circle cx="386" cy="386" r="5" fill="#22C55E"/>
+  <!-- Glass shine -->
+  <path
+    d="M112 92
+       C175 48 286 38 371 70
+       C394 79 410 94 421 111"
+    fill="none"
+    stroke="url(#shine)"
+    stroke-width="9"
+    stroke-linecap="round"
+    opacity="0.45"/>
 </svg>
