@@ -1,0 +1,82 @@
+// /functions/api/friends/data.js
+// GET ?friendId=N — returns a friend's PUBLIC goal progress (no amounts).
+
+export async function onRequest(context) {
+  const { env, request } = context;
+  const url = new URL(request.url);
+  const friendId = parseInt(url.searchParams.get('friendId')) || 0;
+  if (!friendId) return json({ error: 'Friend ID required' }, 400);
+
+  const session = await getSession(request, env);
+  if (!session || !session.userId) return json({ error: 'Not signed in' }, 401);
+  if (!env.DB) return json({ error: 'Database unavailable' }, 500);
+
+  const me = session.userId;
+  try {
+    // Verify friendship
+    const friendship = await env.DB.prepare(
+      'SELECT id FROM friends WHERE user_id = ? AND friend_user_id = ?'
+    ).bind(me, friendId).first();
+    if (!friendship) return json({ error: 'Not friends' }, 403);
+
+    const friend = await env.DB.prepare(
+      'SELECT id, username, name, picture FROM users WHERE id = ?'
+    ).bind(friendId).first();
+    if (!friend) return json({ error: 'User not found' }, 404);
+
+    // Return goals with progress only — no amounts
+    const goalsRaw = await env.DB.prepare(
+      'SELECT name, target, saved, target_date FROM goals WHERE user_id = ? ORDER BY created_at ASC'
+    ).bind(friendId).all();
+
+    const goals = (goalsRaw.results || []).map(g => {
+      const pct = (g.target && g.target > 0) ? Math.min(100, Math.round((g.saved / g.target) * 100)) : 0;
+      return {
+        name: g.name,
+        progress: pct,
+        targetDate: g.target_date || ''
+      };
+    });
+
+    return json({
+      success: true,
+      friend: {
+        id: friend.id,
+        username: friend.username,
+        name: friend.name,
+        picture: friend.picture
+      },
+      goals: goals
+    }, 200);
+  } catch (e) {
+    return json({ error: 'Database error', detail: String(e) }, 500);
+  }
+}
+
+function json(obj, status) {
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+}
+async function getSession(request, env) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+  if (!match) return null;
+  const secret = env.SESSION_SECRET;
+  if (!secret) return null;
+  const cookieValue = decodeURIComponent(match[1]);
+  const parts = cookieValue.split('.');
+  if (parts.length !== 2) return null;
+  const [payloadB64, providedSig] = parts;
+  let payloadStr;
+  try { payloadStr = base64urlDecode(payloadB64); } catch (e) { return null; }
+  const expectedSig = await hmacSign(payloadStr, secret);
+  if (expectedSig !== providedSig) return null;
+  try { return JSON.parse(payloadStr); } catch (e) { return null; }
+}
+async function hmacSign(message, secret) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return base64urlEncodeBytes(new Uint8Array(sig));
+}
+function base64urlEncodeBytes(bytes) { let b = ''; for (let i = 0; i < bytes.length; i++) b += String.fromCharCode(bytes[i]); return btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function base64urlDecode(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; return atob(str); }
