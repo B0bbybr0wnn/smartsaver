@@ -1,5 +1,6 @@
 // /functions/auth/me.js
 // Returns the current user's session info by verifying the signed cookie.
+// Includes username from the database if set.
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -41,10 +42,20 @@ export async function onRequest(context) {
     return json({ user: null }, 200);
   }
 
-  // Optional: expire old sessions (30 days)
+  // Expire old sessions (30 days)
   const age = Date.now() - (session.iat || 0);
   if (age > 30 * 24 * 60 * 60 * 1000) {
     return json({ user: null }, 200);
+  }
+
+  // Optional: refresh username from DB
+  let username = null;
+  if (env.DB && session.userId) {
+    try {
+      const row = await env.DB.prepare('SELECT username FROM users WHERE id = ?')
+        .bind(session.userId).first();
+      if (row) username = row.username || null;
+    } catch (e) {}
   }
 
   return json({
@@ -52,7 +63,9 @@ export async function onRequest(context) {
       sub: session.sub,
       email: session.email,
       name: session.name,
-      picture: session.picture
+      picture: session.picture,
+      userId: session.userId || null,
+      username: username
     }
   }, 200);
 }
@@ -88,4 +101,4 @@ function base64urlDecode(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return atob(str);
-}
+    }
