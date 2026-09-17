@@ -1,6 +1,6 @@
 // /functions/auth/google/callback.js
 // Handles the redirect back from Google. Exchanges code for tokens,
-// verifies user info, then sets a signed session cookie.
+// verifies user info, saves the user to D1, then sets a signed session cookie.
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -18,6 +18,7 @@ export async function onRequest(context) {
   const clientId = env.GOOGLE_CLIENT_ID;
   const clientSecret = env.GOOGLE_CLIENT_SECRET;
   const sessionSecret = env.SESSION_SECRET;
+  const db = env.DB;
 
   if (!clientId || !clientSecret || !sessionSecret) {
     return new Response('Server config error: missing OAuth secrets', { status: 500 });
@@ -71,16 +72,43 @@ export async function onRequest(context) {
     return Response.redirect(url.origin + '/?auth=error', 302);
   }
 
-  // 3. Build session payload
+  // 3. Save/update user in D1
+  let userId = null;
+  if (db) {
+    try {
+      const now = Date.now();
+      const existing = await db.prepare(
+        'SELECT id FROM users WHERE google_sub = ?'
+      ).bind(userInfo.sub).first();
+
+      if (existing) {
+        userId = existing.id;
+        await db.prepare(
+          'UPDATE users SET email = ?, name = ?, picture = ?, last_login = ? WHERE id = ?'
+        ).bind(userInfo.email || '', userInfo.name || '', userInfo.picture || '', now, userId).run();
+      } else {
+        const result = await db.prepare(
+          'INSERT INTO users (google_sub, email, name, picture, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(userInfo.sub, userInfo.email || '', userInfo.name || '', userInfo.picture || '', now, now).run();
+        userId = result.meta.last_row_id;
+      }
+    } catch (e) {
+      // Don't block login if DB fails — session still works
+      console.error('DB error:', e);
+    }
+  }
+
+  // 4. Build session payload
   const session = {
     sub: userInfo.sub,
     email: userInfo.email,
     name: userInfo.name || '',
     picture: userInfo.picture || '',
+    userId: userId,
     iat: Date.now()
   };
 
-  // 4. Sign it with HMAC-SHA256 using SESSION_SECRET
+  // 5. Sign it with HMAC-SHA256 using SESSION_SECRET
   const payload = JSON.stringify(session);
   const signature = await hmacSign(payload, sessionSecret);
   const cookieValue = base64urlEncode(payload) + '.' + signature;
@@ -95,7 +123,7 @@ export async function onRequest(context) {
     'HttpOnly; ' +
     secure +
     'SameSite=Lax; ' +
-    'Max-Age=' + (60 * 60 * 24 * 30) // 30 days
+    'Max-Age=' + (60 * 60 * 24 * 30)
   );
   headers.append('Location', url.origin + '/?auth=success');
 
@@ -124,4 +152,4 @@ function base64urlEncodeBytes(bytes) {
   let binary = '';
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                                                                       }
+      }
