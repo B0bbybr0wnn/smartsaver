@@ -4,9 +4,14 @@
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "hostname": "smartsaver.pages.dev",
+    "iosScheme": "https",
+    "allowNavigation": ["*"]
   },
   "android": {
-    "allowMixedContent": true
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
   }
 }
