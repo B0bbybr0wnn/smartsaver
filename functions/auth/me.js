@@ -1,6 +1,6 @@
 // /functions/auth/me.js
 // Returns the current user's session info by verifying the signed cookie.
-// Includes username from the database if set.
+// Includes username + username_changed_at from the database if set.
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -42,19 +42,21 @@ export async function onRequest(context) {
     return json({ user: null }, 200);
   }
 
-  // Expire old sessions (30 days)
   const age = Date.now() - (session.iat || 0);
   if (age > 30 * 24 * 60 * 60 * 1000) {
     return json({ user: null }, 200);
   }
 
-  // Optional: refresh username from DB
   let username = null;
+  let usernameChangedAt = null;
   if (env.DB && session.userId) {
     try {
-      const row = await env.DB.prepare('SELECT username FROM users WHERE id = ?')
+      const row = await env.DB.prepare('SELECT username, username_changed_at FROM users WHERE id = ?')
         .bind(session.userId).first();
-      if (row) username = row.username || null;
+      if (row) {
+        username = row.username || null;
+        usernameChangedAt = row.username_changed_at || null;
+      }
     } catch (e) {}
   }
 
@@ -65,7 +67,8 @@ export async function onRequest(context) {
       name: session.name,
       picture: session.picture,
       userId: session.userId || null,
-      username: username
+      username: username,
+      usernameChangedAt: usernameChangedAt
     }
   }, 200);
 }
@@ -101,4 +104,4 @@ function base64urlDecode(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return atob(str);
-    }
+                              }
