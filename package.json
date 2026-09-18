@@ -1,0 +1,17 @@
+{
+  "name": "smartsaver",
+  "version": "1.0.0",
+  "description": "SmartSaver - your personal money decision toolkit",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step needed'",
+    "cap:sync": "npx cap sync android",
+    "cap:add:android": "npx cap add android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {}
+}
