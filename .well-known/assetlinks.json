@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "dev.pages.smartsaver.twa",
+    "sha256_cert_fingerprints": ["5D:EE:1D:80:40:97:3B:22:D2:2C:E8:22:91:0F:BC:E5:8D:E3:5C:67:E7:F0:68:C3:94:40:97:CC:E7:61:8D:28"]
+  }
+}]
