@@ -55,6 +55,11 @@ jobs:
           cp icon-maskable-512.png www/
           cp apple-touch-icon.png www/
 
+      - name: Verify www contents
+        run: |
+          echo "=== Files in www/ ==="
+          ls -la www/
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
