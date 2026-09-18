@@ -34,12 +34,26 @@ jobs:
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
 
       - name: Accept licenses and install SDK packages
         run: |
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
+
+      - name: Copy web files into www folder
+        run: |
+          mkdir -p www
+          cp index.html www/
+          cp app.js www/
+          cp styles.css www/
+          cp locales.js www/
+          cp manifest.json www/
+          cp sw.js www/
+          cp icon.svg www/
+          cp icon-192.png www/
+          cp icon-512.png www/
+          cp icon-maskable-512.png www/
+          cp apple-touch-icon.png www/
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
