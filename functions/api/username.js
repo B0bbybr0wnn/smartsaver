@@ -1,5 +1,6 @@
 // /functions/api/username.js
 // POST { username } — sets the username for the currently logged-in user.
+// Enforces: only once per 30 days, unique, valid format.
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -45,16 +46,46 @@ export async function onRequest(context) {
   if (!env.DB) return json({ error: 'Database unavailable' }, 500);
 
   try {
-    const existing = await env.DB.prepare('SELECT id FROM users WHERE username = ? AND id != ?')
-      .bind(username, session.userId).first();
+    const me = await env.DB.prepare(
+      'SELECT username, username_changed_at FROM users WHERE id = ?'
+    ).bind(session.userId).first();
+
+    if (!me) return json({ error: 'User not found' }, 404);
+
+    // First-time set is always allowed. Changing requires 30 days since last change.
+    const now = Date.now();
+    const cooldownMs = 30 * 24 * 60 * 60 * 1000;
+
+    if (me.username && me.username !== username) {
+      const lastChanged = me.username_changed_at || 0;
+      const elapsed = now - lastChanged;
+      if (elapsed < cooldownMs) {
+        const nextAllowed = lastChanged + cooldownMs;
+        return json({
+          error: 'Cooldown',
+          nextAllowedAt: nextAllowed,
+          message: 'You can only change your username once every 30 days.'
+        }, 429);
+      }
+    }
+
+    if (me.username === username) {
+      // No change requested
+      return json({ success: true, username, unchanged: true }, 200);
+    }
+
+    const existing = await env.DB.prepare(
+      'SELECT id FROM users WHERE username = ? AND id != ?'
+    ).bind(username, session.userId).first();
     if (existing) return json({ error: 'Username taken' }, 409);
 
-    await env.DB.prepare('UPDATE users SET username = ? WHERE id = ?')
-      .bind(username, session.userId).run();
+    await env.DB.prepare(
+      'UPDATE users SET username = ?, username_changed_at = ? WHERE id = ?'
+    ).bind(username, now, session.userId).run();
 
-    return json({ success: true, username: username }, 200);
+    return json({ success: true, username, changedAt: now }, 200);
   } catch (e) {
-    return json({ error: 'Database error' }, 500);
+    return json({ error: 'Database error', detail: String(e) }, 500);
   }
 }
 
@@ -82,4 +113,4 @@ function base64urlDecode(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return atob(str);
-    }
+}
