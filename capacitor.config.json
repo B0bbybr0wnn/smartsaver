@@ -1,0 +1,12 @@
+{
+  "appId": "dev.smartsaver.app",
+  "appName": "SmartSaver",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
