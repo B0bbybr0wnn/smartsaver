@@ -240,6 +240,7 @@ function initDeepLinkHandler() {
     AppPlugin.addListener('appUrlOpen', async (data) => {
       try {
         const url = new URL(data.url);
+        showToast('URL: ' + data.url.substring(0, 60));
         if (url.protocol !== 'smartsaver:') return;
         if (url.host !== 'auth') return;
 
