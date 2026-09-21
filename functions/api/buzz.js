@@ -1,5 +1,6 @@
 // /functions/api/buzz.js
 // POST { friendId, action } — action 'send' to buzz, 'seen' to mark all as seen.
+// Reads session from X-SS-Session header (Android) OR ss_session cookie (web).
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -22,17 +23,14 @@ export async function onRequest(context) {
       return json({ success: true }, 200);
     }
 
-    // action === 'send'
     const friendId = parseInt(body.friendId) || 0;
     if (!friendId) return json({ error: 'Friend ID required' }, 400);
 
-    // Verify friendship
     const friendship = await env.DB.prepare(
       'SELECT id FROM friends WHERE user_id = ? AND friend_user_id = ?'
     ).bind(me, friendId).first();
     if (!friendship) return json({ error: 'Not friends' }, 403);
 
-    // Rate limit: 1 buzz per friend per 24h
     const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
     const recent = await env.DB.prepare(
       'SELECT id FROM buzzes WHERE from_user_id = ? AND to_user_id = ? AND created_at > ?'
@@ -50,17 +48,30 @@ export async function onRequest(context) {
 }
 
 function json(obj, status) {
-  return new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  return new Response(JSON.stringify(obj), {
+    status: status || 200,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  });
 }
+
 async function getSession(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-  if (!match) return null;
   const secret = env.SESSION_SECRET;
   if (!secret) return null;
-  const cookieValue = decodeURIComponent(match[1]);
+
+  let cookieValue = null;
+  const headerSession = request.headers.get('X-SS-Session');
+  if (headerSession) {
+    cookieValue = headerSession;
+  } else {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+    if (match) cookieValue = decodeURIComponent(match[1]);
+  }
+
+  if (!cookieValue) return null;
   const parts = cookieValue.split('.');
   if (parts.length !== 2) return null;
+
   const [payloadB64, providedSig] = parts;
   let payloadStr;
   try { payloadStr = base64urlDecode(payloadB64); } catch (e) { return null; }
@@ -68,6 +79,7 @@ async function getSession(request, env) {
   if (expectedSig !== providedSig) return null;
   try { return JSON.parse(payloadStr); } catch (e) { return null; }
 }
+
 async function hmacSign(message, secret) {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
