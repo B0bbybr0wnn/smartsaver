@@ -1,22 +1,33 @@
 // /functions/auth/me.js
-// Returns the current user's session info by verifying the signed cookie.
-// Includes username + username_changed_at from the database if set.
+// Returns the current user's session info.
+// Reads session from EITHER:
+//   1. The X-SS-Session header (Android APK / Capacitor — no cookies)
+//   2. The ss_session cookie (browser / PWA)
 
 export async function onRequest(context) {
   const { env, request } = context;
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-
-  if (!match) {
-    return json({ user: null }, 200);
-  }
 
   const sessionSecret = env.SESSION_SECRET;
   if (!sessionSecret) {
     return json({ user: null, error: 'no_secret' }, 500);
   }
 
-  const cookieValue = decodeURIComponent(match[1]);
+  // Try header first (Android), then fall back to cookie (web)
+  let cookieValue = null;
+
+  const headerSession = request.headers.get('X-SS-Session');
+  if (headerSession) {
+    cookieValue = headerSession;
+  } else {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+    if (match) cookieValue = decodeURIComponent(match[1]);
+  }
+
+  if (!cookieValue) {
+    return json({ user: null }, 200);
+  }
+
   const parts = cookieValue.split('.');
   if (parts.length !== 2) {
     return json({ user: null }, 200);
@@ -104,4 +115,4 @@ function base64urlDecode(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return atob(str);
-                              }
+          }
