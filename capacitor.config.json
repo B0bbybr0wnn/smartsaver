@@ -5,7 +5,7 @@
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
-    "hostname": "smartsaver.pages.dev"
+    "hostname": "localhost"
   },
   "android": {
     "allowMixedContent": true,
