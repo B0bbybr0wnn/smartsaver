@@ -211,38 +211,11 @@ function renderAuthUI() {
 }
 
 async function signIn() {
-  if (isNative()) {
-    try {
-      const Browser = window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
-      if (Browser) {
-        await Browser.open({
-          url: 'https://smartsaver.pages.dev/auth/google?platform=android',
-          presentationStyle: 'popover'
-        });
-        return;
-      }
-    } catch (e) {
-      console.warn('Native sign-in failed, falling back:', e);
-    }
-  }
-  window.location.href = '/auth/google';
+  window.location.href = 'https://smartsaver.pages.dev/auth/google';
 }
 
 async function signOut() {
-  if (isNative()) {
-    try {
-      const Browser = window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
-      if (Browser) {
-        await Browser.open({ url: 'https://smartsaver.pages.dev/auth/logout' });
-      }
-    } catch (e) {}
-    localStorage.removeItem('ss_session_cookie');
-    state.user = null;
-    renderAuthUI();
-    showToast(state.lang === 'de' ? 'Abgemeldet' : state.lang === 'es' ? 'Sesión cerrada' : 'Signed out');
-    return;
-  }
-  window.location.href = '/auth/logout';
+  window.location.href = 'https://smartsaver.pages.dev/auth/logout';
 }
 
 function handleAuthQuery() {
