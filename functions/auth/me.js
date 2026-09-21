@@ -1,8 +1,9 @@
 // /functions/auth/me.js
 // Returns the current user's session info.
 // Reads session from EITHER:
-//   1. The X-SS-Session header (Android APK / Capacitor — no cookies)
+//   1. The X-SS-Session header (Android APK — no cookies)
 //   2. The ss_session cookie (browser / PWA)
+// Handles URL-encoded session values from Android deep links.
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -12,16 +13,18 @@ export async function onRequest(context) {
     return json({ user: null, error: 'no_secret' }, 500);
   }
 
-  // Try header first (Android), then fall back to cookie (web)
   let cookieValue = null;
 
   const headerSession = request.headers.get('X-SS-Session');
   if (headerSession) {
     cookieValue = headerSession;
+    try { cookieValue = decodeURIComponent(cookieValue); } catch (e) {}
   } else {
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-    if (match) cookieValue = decodeURIComponent(match[1]);
+    if (match) {
+      try { cookieValue = decodeURIComponent(match[1]); } catch (e) { cookieValue = match[1]; }
+    }
   }
 
   if (!cookieValue) {
@@ -115,4 +118,4 @@ function base64urlDecode(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return atob(str);
-          }
+  }
