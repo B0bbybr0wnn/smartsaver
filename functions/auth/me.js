@@ -3,7 +3,7 @@
 // Reads session from EITHER:
 //   1. The X-SS-Session header (Android APK — no cookies)
 //   2. The ss_session cookie (browser / PWA)
-// Handles URL-encoded session values from Android deep links.
+// Also includes a debug log to compare header vs cookie sessions.
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -13,18 +13,26 @@ export async function onRequest(context) {
     return json({ user: null, error: 'no_secret' }, 500);
   }
 
-  let cookieValue = null;
-
   const headerSession = request.headers.get('X-SS-Session');
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+  const cookieSession = match ? decodeURIComponent(match[1]) : null;
+
+  console.log('DEBUG:', JSON.stringify({
+    headerPresent: !!headerSession,
+    headerLength: headerSession ? headerSession.length : null,
+    cookiePresent: !!cookieSession,
+    cookieLength: cookieSession ? cookieSession.length : null,
+    identical: headerSession === cookieSession,
+    headerStart: headerSession ? headerSession.substring(0, 20) : null,
+    cookieStart: cookieSession ? cookieSession.substring(0, 20) : null
+  }));
+
+  let cookieValue = null;
   if (headerSession) {
     cookieValue = headerSession;
-    try { cookieValue = decodeURIComponent(cookieValue); } catch (e) {}
-  } else {
-    const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-    if (match) {
-      try { cookieValue = decodeURIComponent(match[1]); } catch (e) { cookieValue = match[1]; }
-    }
+  } else if (cookieSession) {
+    cookieValue = cookieSession;
   }
 
   if (!cookieValue) {
@@ -33,7 +41,7 @@ export async function onRequest(context) {
 
   const parts = cookieValue.split('.');
   if (parts.length !== 2) {
-    return json({ user: null }, 200);
+    return json({ user: null, debug: 'parts_count_wrong', count: parts.length }, 200);
   }
 
   const [payloadB64, providedSig] = parts;
@@ -41,24 +49,32 @@ export async function onRequest(context) {
   try {
     payloadStr = base64urlDecode(payloadB64);
   } catch (e) {
-    return json({ user: null }, 200);
+    return json({ user: null, debug: 'base64_decode_failed' }, 200);
   }
 
   const expectedSig = await hmacSign(payloadStr, sessionSecret);
   if (expectedSig !== providedSig) {
-    return json({ user: null }, 200);
+    return json({
+      user: null,
+      debug: 'hmac_mismatch',
+      expectedStart: expectedSig.substring(0, 12),
+      providedStart: providedSig.substring(0, 12),
+      expectedLen: expectedSig.length,
+      providedLen: providedSig.length,
+      payloadStart: payloadStr.substring(0, 30)
+    }, 200);
   }
 
   let session;
   try {
     session = JSON.parse(payloadStr);
   } catch (e) {
-    return json({ user: null }, 200);
+    return json({ user: null, debug: 'json_parse_failed' }, 200);
   }
 
   const age = Date.now() - (session.iat || 0);
   if (age > 30 * 24 * 60 * 60 * 1000) {
-    return json({ user: null }, 200);
+    return json({ user: null, debug: 'session_expired' }, 200);
   }
 
   let username = null;
@@ -118,4 +134,4 @@ function base64urlDecode(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return atob(str);
-  }
+}
