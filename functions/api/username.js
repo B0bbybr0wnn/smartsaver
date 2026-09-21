@@ -6,12 +6,16 @@
 export async function onRequest(context) {
   const { env, request } = context;
 
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
+  }
+
   if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405);
+    return json({ error: 'Method not allowed' }, 405, request);
   }
 
   const sessionSecret = env.SESSION_SECRET;
-  if (!sessionSecret) return json({ error: 'Server config error' }, 500);
+  if (!sessionSecret) return json({ error: 'Server config error' }, 500, request);
 
   let cookieValue = null;
   const headerSession = request.headers.get('X-SS-Session');
@@ -23,42 +27,42 @@ export async function onRequest(context) {
     if (match) cookieValue = decodeURIComponent(match[1]);
   }
 
-  if (!cookieValue) return json({ error: 'Not signed in' }, 401);
+  if (!cookieValue) return json({ error: 'Not signed in' }, 401, request);
 
   const parts = cookieValue.split('.');
-  if (parts.length !== 2) return json({ error: 'Invalid session' }, 401);
+  if (parts.length !== 2) return json({ error: 'Invalid session' }, 401, request);
 
   const [payloadB64, providedSig] = parts;
   let payloadStr;
   try { payloadStr = base64urlDecode(payloadB64); }
-  catch (e) { return json({ error: 'Invalid session' }, 401); }
+  catch (e) { return json({ error: 'Invalid session' }, 401, request); }
 
   const expectedSig = await hmacSign(payloadStr, sessionSecret);
-  if (expectedSig !== providedSig) return json({ error: 'Invalid session' }, 401);
+  if (expectedSig !== providedSig) return json({ error: 'Invalid session' }, 401, request);
 
   let session;
   try { session = JSON.parse(payloadStr); }
-  catch (e) { return json({ error: 'Invalid session' }, 401); }
+  catch (e) { return json({ error: 'Invalid session' }, 401, request); }
 
-  if (!session.userId) return json({ error: 'User not found' }, 400);
+  if (!session.userId) return json({ error: 'User not found' }, 400, request);
 
   let body;
   try { body = await request.json(); }
-  catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  catch (e) { return json({ error: 'Invalid JSON' }, 400, request); }
 
   const username = (body.username || '').trim().toLowerCase();
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    return json({ error: 'Username must be 3-20 characters: letters, numbers, underscore.' }, 400);
+    return json({ error: 'Username must be 3-20 characters: letters, numbers, underscore.' }, 400, request);
   }
 
-  if (!env.DB) return json({ error: 'Database unavailable' }, 500);
+  if (!env.DB) return json({ error: 'Database unavailable' }, 500, request);
 
   try {
     const me = await env.DB.prepare(
       'SELECT username, username_changed_at FROM users WHERE id = ?'
     ).bind(session.userId).first();
 
-    if (!me) return json({ error: 'User not found' }, 404);
+    if (!me) return json({ error: 'User not found' }, 404, request);
 
     const now = Date.now();
     const cooldownMs = 30 * 24 * 60 * 60 * 1000;
@@ -72,34 +76,56 @@ export async function onRequest(context) {
           error: 'Cooldown',
           nextAllowedAt: nextAllowed,
           message: 'You can only change your username once every 30 days.'
-        }, 429);
+        }, 429, request);
       }
     }
 
     if (me.username === username) {
-      return json({ success: true, username, unchanged: true }, 200);
+      return json({ success: true, username, unchanged: true }, 200, request);
     }
 
     const existing = await env.DB.prepare(
       'SELECT id FROM users WHERE username = ? AND id != ?'
     ).bind(username, session.userId).first();
-    if (existing) return json({ error: 'Username taken' }, 409);
+    if (existing) return json({ error: 'Username taken' }, 409, request);
 
     await env.DB.prepare(
       'UPDATE users SET username = ?, username_changed_at = ? WHERE id = ?'
     ).bind(username, now, session.userId).run();
 
-    return json({ success: true, username, changedAt: now }, 200);
+    return json({ success: true, username, changedAt: now }, 200, request);
   } catch (e) {
-    return json({ error: 'Database error', detail: String(e) }, 500);
+    return json({ error: 'Database error', detail: String(e) }, 500, request);
   }
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status: status || 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
+// ============ helpers ============
+function corsHeaders(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = [
+    'https://smartsaver.pages.dev',
+    'https://localhost',
+    'http://localhost'
+  ];
+  const allowOrigin = allowed.includes(origin) ? origin : 'https://smartsaver.pages.dev';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-SS-Session',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin'
+  };
+}
+
+function json(obj, status, request) {
+  const headers = Object.assign(
+    {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
+    },
+    corsHeaders(request)
+  );
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: headers });
 }
 
 async function hmacSign(message, secret) {
