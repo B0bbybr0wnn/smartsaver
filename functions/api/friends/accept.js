@@ -4,18 +4,23 @@
 
 export async function onRequest(context) {
   const { env, request } = context;
-  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
+  }
+
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, request);
 
   const session = await getSession(request, env);
-  if (!session || !session.userId) return json({ error: 'Not signed in' }, 401);
-  if (!env.DB) return json({ error: 'Database unavailable' }, 500);
+  if (!session || !session.userId) return json({ error: 'Not signed in' }, 401, request);
+  if (!env.DB) return json({ error: 'Database unavailable' }, 500, request);
 
   let body;
   try { body = await request.json(); }
-  catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  catch (e) { return json({ error: 'Invalid JSON' }, 400, request); }
 
   const requestId = parseInt(body.requestId) || 0;
-  if (!requestId) return json({ error: 'Request ID required' }, 400);
+  if (!requestId) return json({ error: 'Request ID required' }, 400, request);
 
   const me = session.userId;
   try {
@@ -23,8 +28,8 @@ export async function onRequest(context) {
       'SELECT id, from_user_id, to_user_id, status FROM friend_requests WHERE id = ? AND to_user_id = ?'
     ).bind(requestId, me).first();
 
-    if (!req) return json({ error: 'Request not found' }, 404);
-    if (req.status !== 'pending') return json({ error: 'Already handled' }, 409);
+    if (!req) return json({ error: 'Request not found' }, 404, request);
+    if (req.status !== 'pending') return json({ error: 'Already handled' }, 409, request);
 
     const now = Date.now();
 
@@ -39,17 +44,39 @@ export async function onRequest(context) {
       'INSERT OR IGNORE INTO friends (user_id, friend_user_id, created_at) VALUES (?, ?, ?)'
     ).bind(req.from_user_id, me, now).run();
 
-    return json({ success: true }, 200);
+    return json({ success: true }, 200, request);
   } catch (e) {
-    return json({ error: 'Database error', detail: String(e) }, 500);
+    return json({ error: 'Database error', detail: String(e) }, 500, request);
   }
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status: status || 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
+// ============ helpers ============
+function corsHeaders(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = [
+    'https://smartsaver.pages.dev',
+    'https://localhost',
+    'http://localhost'
+  ];
+  const allowOrigin = allowed.includes(origin) ? origin : 'https://smartsaver.pages.dev';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-SS-Session',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin'
+  };
+}
+
+function json(obj, status, request) {
+  const headers = Object.assign(
+    {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
+    },
+    corsHeaders(request)
+  );
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: headers });
 }
 
 async function getSession(request, env) {
