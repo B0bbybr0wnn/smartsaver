@@ -138,8 +138,10 @@ export async function onRequest(context) {
   // Redirect to the custom deep link. The app receives this URL,
   // extracts the session, and stores it. No cookie needed.
   if (platform === 'android') {
-    const deepLink = 'smartsaver://auth/callback?session=' + encodeURIComponent(cookieValue);
-    return Response.redirect(deepLink, 302);
+  // Send the session AND a debug marker
+  const debug = 'sid=' + session.userId + '&email=' + encodeURIComponent(session.email || '') + '&len=' + cookieValue.length;
+  const deepLink = 'smartsaver://auth/callback?session=' + encodeURIComponent(cookieValue) + '&' + debug;
+  return Response.redirect(deepLink, 302);
   }
 
   // ============ WEB FLOW ============
