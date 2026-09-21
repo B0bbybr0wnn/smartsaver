@@ -4,15 +4,20 @@
 
 export async function onRequest(context) {
   const { env, request } = context;
-  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
+  }
+
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, request);
 
   const session = await getSession(request, env);
-  if (!session || !session.userId) return json({ error: 'Not signed in' }, 401);
-  if (!env.DB) return json({ error: 'Database unavailable' }, 500);
+  if (!session || !session.userId) return json({ error: 'Not signed in' }, 401, request);
+  if (!env.DB) return json({ error: 'Database unavailable' }, 500, request);
 
   let body;
   try { body = await request.json(); }
-  catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  catch (e) { return json({ error: 'Invalid JSON' }, 400, request); }
 
   const action = body.action || 'send';
   const me = session.userId;
@@ -20,38 +25,60 @@ export async function onRequest(context) {
   try {
     if (action === 'seen') {
       await env.DB.prepare('UPDATE buzzes SET seen = 1 WHERE to_user_id = ?').bind(me).run();
-      return json({ success: true }, 200);
+      return json({ success: true }, 200, request);
     }
 
     const friendId = parseInt(body.friendId) || 0;
-    if (!friendId) return json({ error: 'Friend ID required' }, 400);
+    if (!friendId) return json({ error: 'Friend ID required' }, 400, request);
 
     const friendship = await env.DB.prepare(
       'SELECT id FROM friends WHERE user_id = ? AND friend_user_id = ?'
     ).bind(me, friendId).first();
-    if (!friendship) return json({ error: 'Not friends' }, 403);
+    if (!friendship) return json({ error: 'Not friends' }, 403, request);
 
     const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
     const recent = await env.DB.prepare(
       'SELECT id FROM buzzes WHERE from_user_id = ? AND to_user_id = ? AND created_at > ?'
     ).bind(me, friendId, dayAgo).first();
-    if (recent) return json({ error: 'Already buzzed them in the last 24 hours. Give it a rest.' }, 429);
+    if (recent) return json({ error: 'Already buzzed them in the last 24 hours. Give it a rest.' }, 429, request);
 
     await env.DB.prepare(
       'INSERT INTO buzzes (from_user_id, to_user_id, seen, created_at) VALUES (?, ?, 0, ?)'
     ).bind(me, friendId, Date.now()).run();
 
-    return json({ success: true }, 200);
+    return json({ success: true }, 200, request);
   } catch (e) {
-    return json({ error: 'Database error', detail: String(e) }, 500);
+    return json({ error: 'Database error', detail: String(e) }, 500, request);
   }
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status: status || 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
+// ============ helpers ============
+function corsHeaders(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = [
+    'https://smartsaver.pages.dev',
+    'https://localhost',
+    'http://localhost'
+  ];
+  const allowOrigin = allowed.includes(origin) ? origin : 'https://smartsaver.pages.dev';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-SS-Session',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin'
+  };
+}
+
+function json(obj, status, request) {
+  const headers = Object.assign(
+    {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
+    },
+    corsHeaders(request)
+  );
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: headers });
 }
 
 async function getSession(request, env) {
