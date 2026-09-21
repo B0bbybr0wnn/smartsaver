@@ -4,10 +4,15 @@
 
 export async function onRequest(context) {
   const { env, request } = context;
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
+  }
+
   const session = await getSession(request, env);
-  if (!session) return json({ error: 'Not signed in' }, 401);
-  if (!session.userId) return json({ error: 'User not found' }, 400);
-  if (!env.DB) return json({ error: 'Database unavailable' }, 500);
+  if (!session) return json({ error: 'Not signed in' }, 401, request);
+  if (!session.userId) return json({ error: 'User not found' }, 400, request);
+  if (!env.DB) return json({ error: 'Database unavailable' }, 500, request);
 
   try {
     const goalsRaw = await env.DB.prepare('SELECT name, target, saved, target_date, created_at FROM goals WHERE user_id = ? ORDER BY created_at ASC').bind(session.userId).all();
@@ -31,9 +36,9 @@ export async function onRequest(context) {
       goalName: c.goal_name, amount: c.amount, ts: c.created_at
     }));
 
-    return json({ success: true, goals, decisions, spends, contributions }, 200);
+    return json({ success: true, goals, decisions, spends, contributions }, 200, request);
   } catch (e) {
-    return json({ error: 'Database error', detail: String(e) }, 500);
+    return json({ error: 'Database error', detail: String(e) }, 500, request);
   }
 }
 
@@ -42,11 +47,33 @@ function dayKeyFromTs(ts) {
   return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status: status || 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
+// ============ helpers ============
+function corsHeaders(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = [
+    'https://smartsaver.pages.dev',
+    'https://localhost',
+    'http://localhost'
+  ];
+  const allowOrigin = allowed.includes(origin) ? origin : 'https://smartsaver.pages.dev';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-SS-Session',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin'
+  };
+}
+
+function json(obj, status, request) {
+  const headers = Object.assign(
+    {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
+    },
+    corsHeaders(request)
+  );
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: headers });
 }
 
 async function getSession(request, env) {
