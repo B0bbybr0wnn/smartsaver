@@ -1,5 +1,6 @@
 // /functions/api/friends/accept.js
 // POST { requestId } — accept an incoming friend request.
+// Reads session from X-SS-Session header (Android) OR ss_session cookie (web).
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -30,7 +31,6 @@ export async function onRequest(context) {
     await env.DB.prepare('UPDATE friend_requests SET status = ?, responded_at = ? WHERE id = ?')
       .bind('accepted', now, requestId).run();
 
-    // Insert both directions of friendship
     await env.DB.prepare(
       'INSERT OR IGNORE INTO friends (user_id, friend_user_id, created_at) VALUES (?, ?, ?)'
     ).bind(me, req.from_user_id, now).run();
@@ -46,17 +46,30 @@ export async function onRequest(context) {
 }
 
 function json(obj, status) {
-  return new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  return new Response(JSON.stringify(obj), {
+    status: status || 200,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  });
 }
+
 async function getSession(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-  if (!match) return null;
   const secret = env.SESSION_SECRET;
   if (!secret) return null;
-  const cookieValue = decodeURIComponent(match[1]);
+
+  let cookieValue = null;
+  const headerSession = request.headers.get('X-SS-Session');
+  if (headerSession) {
+    cookieValue = headerSession;
+  } else {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+    if (match) cookieValue = decodeURIComponent(match[1]);
+  }
+
+  if (!cookieValue) return null;
   const parts = cookieValue.split('.');
   if (parts.length !== 2) return null;
+
   const [payloadB64, providedSig] = parts;
   let payloadStr;
   try { payloadStr = base64urlDecode(payloadB64); } catch (e) { return null; }
@@ -64,6 +77,7 @@ async function getSession(request, env) {
   if (expectedSig !== providedSig) return null;
   try { return JSON.parse(payloadStr); } catch (e) { return null; }
 }
+
 async function hmacSign(message, secret) {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
