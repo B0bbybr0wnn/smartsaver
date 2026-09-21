@@ -55,7 +55,6 @@ jobs:
           cp icon-512.png www/
           cp icon-maskable-512.png www/
           cp apple-touch-icon.png www/
-          echo "=== Files in www/ ==="
           ls -la www/
 
       - name: Install dependencies
@@ -63,6 +62,12 @@ jobs:
 
       - name: Add Android platform
         run: npx cap add android
+
+      - name: Generate Android app icons from icon-1024.png
+        run: |
+          mkdir -p resources
+          cp icon-1024.png resources/icon.png
+          npx @capacitor/assets generate --android --iconBackgroundColor '#0a0e1a' --iconBackgroundColorDark '#0a0e1a' --splashBackgroundColor '#0a0e1a' --splashBackgroundColorDark '#0a0e1a' || true
 
       - name: Sync web assets
         run: npx cap sync android
