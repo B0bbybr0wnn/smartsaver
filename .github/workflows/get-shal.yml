@@ -1,0 +1,21 @@
+name: Get SHA1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  getsha1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Extract SHA-1 and SHA-256 from keystore
+        run: |
+          keytool -list -v -keystore signing.keystore -alias my-key-alias -storepass D1fQfFuHLljF -keypass D1fQfFuHLljF
