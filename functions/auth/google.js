@@ -1,5 +1,6 @@
 // /functions/auth/google.js
 // Starts the Google OAuth flow — redirects user to Google's consent screen.
+// Supports two platforms: web (browser) and android (TWA/Capacitor APK).
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -10,8 +11,12 @@ export async function onRequest(context) {
     return new Response('Server config error: GOOGLE_CLIENT_ID missing', { status: 500 });
   }
 
+  const platform = url.searchParams.get('platform') || 'web';
   const redirectUri = url.origin + '/auth/google/callback';
-  const state = crypto.randomUUID();
+
+  // Encode platform + nonce in state so the callback knows where to redirect
+  const nonce = crypto.randomUUID();
+  const state = platform + ':' + nonce;
 
   const params = new URLSearchParams({
     client_id: clientId,
