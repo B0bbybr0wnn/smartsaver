@@ -153,7 +153,10 @@ function isNative() {
 
 function getSessionHeader() {
   const stored = localStorage.getItem('ss_session_cookie');
-  return stored ? { 'X-SS-Session': stored } : {};
+  if (!stored) return {};
+  let clean = stored;
+  try { clean = decodeURIComponent(stored); } catch (e) {}
+  return { 'X-SS-Session': clean };
 }
 
 async function checkAuth() {
