@@ -1,5 +1,6 @@
 // /functions/api/friends/data.js
 // GET ?friendId=N — returns a friend's PUBLIC goal progress (no amounts).
+// Reads session from X-SS-Session header (Android) OR ss_session cookie (web).
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -13,7 +14,6 @@ export async function onRequest(context) {
 
   const me = session.userId;
   try {
-    // Verify friendship
     const friendship = await env.DB.prepare(
       'SELECT id FROM friends WHERE user_id = ? AND friend_user_id = ?'
     ).bind(me, friendId).first();
@@ -24,7 +24,6 @@ export async function onRequest(context) {
     ).bind(friendId).first();
     if (!friend) return json({ error: 'User not found' }, 404);
 
-    // Return goals with progress only — no amounts
     const goalsRaw = await env.DB.prepare(
       'SELECT name, target, saved, target_date FROM goals WHERE user_id = ? ORDER BY created_at ASC'
     ).bind(friendId).all();
@@ -54,17 +53,30 @@ export async function onRequest(context) {
 }
 
 function json(obj, status) {
-  return new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  return new Response(JSON.stringify(obj), {
+    status: status || 200,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  });
 }
+
 async function getSession(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-  if (!match) return null;
   const secret = env.SESSION_SECRET;
   if (!secret) return null;
-  const cookieValue = decodeURIComponent(match[1]);
+
+  let cookieValue = null;
+  const headerSession = request.headers.get('X-SS-Session');
+  if (headerSession) {
+    cookieValue = headerSession;
+  } else {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+    if (match) cookieValue = decodeURIComponent(match[1]);
+  }
+
+  if (!cookieValue) return null;
   const parts = cookieValue.split('.');
   if (parts.length !== 2) return null;
+
   const [payloadB64, providedSig] = parts;
   let payloadStr;
   try { payloadStr = base64urlDecode(payloadB64); } catch (e) { return null; }
@@ -72,6 +84,7 @@ async function getSession(request, env) {
   if (expectedSig !== providedSig) return null;
   try { return JSON.parse(payloadStr); } catch (e) { return null; }
 }
+
 async function hmacSign(message, secret) {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
