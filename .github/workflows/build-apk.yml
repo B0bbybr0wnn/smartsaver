@@ -69,6 +69,44 @@ jobs:
           cp icon-1024.png resources/icon.png
           npx @capacitor/assets generate --android --iconBackgroundColor '#0a0e1a' --iconBackgroundColorDark '#0a0e1a' --splashBackgroundColor '#0a0e1a' --splashBackgroundColorDark '#0a0e1a' || true
 
+      - name: Add deep link intent filter to Android manifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q 'smartsaver' "$MANIFEST"; then
+            python3 << 'PYEOF'
+          import re
+          path = "android/app/src/main/AndroidManifest.xml"
+          with open(path, 'r') as f:
+              content = f.read()
+
+          deep_link_filter = '''            <intent-filter android:autoVerify="false">
+                  <action android:name="android.intent.action.VIEW" />
+                  <category android:name="android.intent.category.DEFAULT" />
+                  <category android:name="android.intent.category.BROWSABLE" />
+                  <data android:scheme="smartsaver" android:host="auth" android:pathPrefix="/callback" />
+              </intent-filter>
+              <intent-filter>
+                  <action android:name="android.intent.action.VIEW" />
+                  <category android:name="android.intent.category.DEFAULT" />
+                  <category android:name="android.intent.category.BROWSABLE" />
+                  <data android:scheme="smartsaver" />
+              </intent-filter>
+          '''
+
+          # Insert right before </activity>
+          idx = content.find('</activity>')
+          if idx != -1:
+              content = content[:idx] + deep_link_filter + '        ' + content[idx:]
+              with open(path, 'w') as f:
+                  f.write(content)
+              print("Deep link intent filter added.")
+          else:
+              print("Could not find </activity> tag.")
+          PYEOF
+          else
+            echo "Deep link already present"
+          fi
+
       - name: Sync web assets
         run: npx cap sync android
 
