@@ -1,18 +1,29 @@
 // /functions/auth/google/callback.js
 // Handles the redirect back from Google. Exchanges code for tokens,
 // verifies user info, saves the user to D1, then sets a signed session cookie.
+// Supports two return paths:
+//   - web: sets cookie + redirects to /?auth=success
+//   - android: redirects to smartsaver://auth/callback?session=... (deep link)
 
 export async function onRequest(context) {
   const { env, request } = context;
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
+  const rawState = url.searchParams.get('state') || 'web:';
+
+  // Parse platform from state (format: "platform:nonce")
+  const platform = rawState.split(':')[0] || 'web';
 
   if (error) {
-    return Response.redirect(url.origin + '/?auth=denied', 302);
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=denied', 302)
+      : Response.redirect(url.origin + '/?auth=denied', 302);
   }
   if (!code) {
-    return Response.redirect(url.origin + '/?auth=error', 302);
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=missing_code', 302)
+      : Response.redirect(url.origin + '/?auth=error', 302);
   }
 
   const clientId = env.GOOGLE_CLIENT_ID;
@@ -41,18 +52,24 @@ export async function onRequest(context) {
       })
     });
   } catch (e) {
-    return Response.redirect(url.origin + '/?auth=error', 302);
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=token_failed', 302)
+      : Response.redirect(url.origin + '/?auth=error', 302);
   }
 
   if (!tokenRes.ok) {
-    return Response.redirect(url.origin + '/?auth=error', 302);
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=token_failed', 302)
+      : Response.redirect(url.origin + '/?auth=error', 302);
   }
 
   const tokens = await tokenRes.json();
   const idToken = tokens.id_token;
 
   if (!idToken) {
-    return Response.redirect(url.origin + '/?auth=error', 302);
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=no_id_token', 302)
+      : Response.redirect(url.origin + '/?auth=error', 302);
   }
 
   // 2. Verify & decode the ID token with Google
@@ -60,16 +77,21 @@ export async function onRequest(context) {
   try {
     const verifyRes = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + idToken);
     if (!verifyRes.ok) {
-      return Response.redirect(url.origin + '/?auth=error', 302);
+      return platform === 'android'
+        ? Response.redirect('smartsaver://auth/callback?error=verify_failed', 302)
+        : Response.redirect(url.origin + '/?auth=error', 302);
     }
     userInfo = await verifyRes.json();
   } catch (e) {
-    return Response.redirect(url.origin + '/?auth=error', 302);
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=verify_failed', 302)
+      : Response.redirect(url.origin + '/?auth=error', 302);
   }
 
-  // Verify token was issued for our client
-  if (userInfo.aud !== clientId) {
-    return Response.redirect(url.origin + '/?auth=error', 302);
+  if (userInfo.aud !== clientId && userInfo.aud !== '442317206640-sea65a3b1a11aa4lauqi9avqjoqa9nos.apps.googleusercontent.com') {
+    return platform === 'android'
+      ? Response.redirect('smartsaver://auth/callback?error=aud_mismatch', 302)
+      : Response.redirect(url.origin + '/?auth=error', 302);
   }
 
   // 3. Save/update user in D1
@@ -93,7 +115,6 @@ export async function onRequest(context) {
         userId = result.meta.last_row_id;
       }
     } catch (e) {
-      // Don't block login if DB fails — session still works
       console.error('DB error:', e);
     }
   }
@@ -108,11 +129,21 @@ export async function onRequest(context) {
     iat: Date.now()
   };
 
-  // 5. Sign it with HMAC-SHA256 using SESSION_SECRET
+  // 5. Sign it with HMAC-SHA256
   const payload = JSON.stringify(session);
   const signature = await hmacSign(payload, sessionSecret);
   const cookieValue = base64urlEncode(payload) + '.' + signature;
 
+  // ============ ANDROID FLOW ============
+  // Redirect to the custom deep link. The app receives this URL,
+  // extracts the session, and stores it. No cookie needed.
+  if (platform === 'android') {
+    const deepLink = 'smartsaver://auth/callback?session=' + encodeURIComponent(cookieValue);
+    return Response.redirect(deepLink, 302);
+  }
+
+  // ============ WEB FLOW ============
+  // Set cookie as before.
   const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   const secure = isLocalhost ? '' : 'Secure; ';
 
@@ -152,4 +183,4 @@ function base64urlEncodeBytes(bytes) {
   let binary = '';
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      }
+}
