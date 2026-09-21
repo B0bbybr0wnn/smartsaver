@@ -1,6 +1,7 @@
 // /functions/api/username.js
 // POST { username } — sets the username for the currently logged-in user.
 // Enforces: only once per 30 days, unique, valid format.
+// Reads session from X-SS-Session header (Android) OR ss_session cookie (web).
 
 export async function onRequest(context) {
   const { env, request } = context;
@@ -9,14 +10,21 @@ export async function onRequest(context) {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
-  if (!match) return json({ error: 'Not signed in' }, 401);
-
   const sessionSecret = env.SESSION_SECRET;
   if (!sessionSecret) return json({ error: 'Server config error' }, 500);
 
-  const cookieValue = decodeURIComponent(match[1]);
+  let cookieValue = null;
+  const headerSession = request.headers.get('X-SS-Session');
+  if (headerSession) {
+    cookieValue = headerSession;
+  } else {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/(?:^|;\s*)ss_session=([^;]+)/);
+    if (match) cookieValue = decodeURIComponent(match[1]);
+  }
+
+  if (!cookieValue) return json({ error: 'Not signed in' }, 401);
+
   const parts = cookieValue.split('.');
   if (parts.length !== 2) return json({ error: 'Invalid session' }, 401);
 
@@ -52,7 +60,6 @@ export async function onRequest(context) {
 
     if (!me) return json({ error: 'User not found' }, 404);
 
-    // First-time set is always allowed. Changing requires 30 days since last change.
     const now = Date.now();
     const cooldownMs = 30 * 24 * 60 * 60 * 1000;
 
@@ -70,7 +77,6 @@ export async function onRequest(context) {
     }
 
     if (me.username === username) {
-      // No change requested
       return json({ success: true, username, unchanged: true }, 200);
     }
 
@@ -102,15 +108,5 @@ async function hmacSign(message, secret) {
   const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
   return base64urlEncodeBytes(new Uint8Array(sig));
 }
-
-function base64urlEncodeBytes(bytes) {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function base64urlDecode(str) {
-  str = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (str.length % 4) str += '=';
-  return atob(str);
-}
+function base64urlEncodeBytes(bytes) { let b = ''; for (let i = 0; i < bytes.length; i++) b += String.fromCharCode(bytes[i]); return btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function base64urlDecode(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; return atob(str); }
