@@ -1810,6 +1810,7 @@ function startApp() {
   goTo('home');
   checkAuth();
   handleAuthQuery();
+  initAds();
   setTimeout(() => {
     state.lastSeenAt = Date.now();
     localStorage.setItem('ss_lastSeenAt', state.lastSeenAt.toString());
