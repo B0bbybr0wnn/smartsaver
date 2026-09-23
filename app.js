@@ -26,6 +26,29 @@ const state = {
 };
 
 const API = 'https://smartsaver.pages.dev';
+// ============ ADMOB ============
+let AdMob = null;
+let BannerAdPosition = null;
+let BannerAdSize = null;
+async function initAds() {
+  if (!isNative()) return;
+  try {
+    const mod = await import('@capacitor-community/admob');
+    AdMob = mod.AdMob;
+    BannerAdPosition = mod.BannerAdPosition;
+    BannerAdSize = mod.BannerAdSize;
+    await AdMob.initialize({});
+    await AdMob.showBanner({
+      adId: 'ca-app-pub-3940256099942544/6300978111',
+      adSize: BannerAdSize.BANNER,
+      position: BannerAdPosition.BOTTOM_CENTER,
+      margin: 0,
+      isTesting: true
+    });
+  } catch (e) {
+    console.warn('AdMob init failed:', e);
+  }
+ }
 
 const CURRENCIES = [
   { code: 'USD' }, { code: 'EUR' }, { code: 'GBP' }, { code: 'JPY' }, { code: 'CNY' },
