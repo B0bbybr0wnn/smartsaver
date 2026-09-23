@@ -39,16 +39,15 @@ async function initAds() {
     BannerAdSize = mod.BannerAdSize;
     await AdMob.initialize({});
     await AdMob.showBanner({
-      adId: 'ca-app-pub-3940256099942544/6300978111',
+      adId: 'ca-app-pub-7841233102654621/8577029369',
       adSize: BannerAdSize.BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 0,
-      isTesting: true
+      margin: 0
     });
   } catch (e) {
     console.warn('AdMob init failed:', e);
   }
- }
+}
 
 const CURRENCIES = [
   { code: 'USD' }, { code: 'EUR' }, { code: 'GBP' }, { code: 'JPY' }, { code: 'CNY' },
