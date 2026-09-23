@@ -69,6 +69,32 @@ jobs:
           cp icon-1024.png resources/icon.png
           npx @capacitor/assets generate --android --iconBackgroundColor '#0a0e1a' --iconBackgroundColorDark '#0a0e1a' --splashBackgroundColor '#0a0e1a' --splashBackgroundColorDark '#0a0e1a' || true
 
+      - name: Inject AdMob App ID into AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          python3 << 'PYEOF'
+          path = "android/app/src/main/AndroidManifest.xml"
+          with open(path, 'r') as f:
+              content = f.read()
+
+          admob_meta = '''        <meta-data
+              android:name="com.google.android.gms.ads.APPLICATION_ID"
+              android:value="ca-app-pub-3940256099942544~3347511713" />
+'''
+
+          if 'com.google.android.gms.ads.APPLICATION_ID' not in content:
+              idx = content.find('</application>')
+              if idx != -1:
+                  content = content[:idx] + admob_meta + '    ' + content[idx:]
+                  with open(path, 'w') as f:
+                      f.write(content)
+                  print("AdMob App ID injected.")
+              else:
+                  print("Could not find </application>")
+          else:
+              print("AdMob App ID already present")
+          PYEOF
+
       - name: Add deep link intent filter to Android manifest
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
@@ -93,7 +119,6 @@ jobs:
               </intent-filter>
           '''
 
-          # Insert right before </activity>
           idx = content.find('</activity>')
           if idx != -1:
               content = content[:idx] + deep_link_filter + '        ' + content[idx:]
