@@ -73,7 +73,7 @@ jobs:
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if ! grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$MANIFEST"; then
-            sed -i 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713" />\n    </application>|' "$MANIFEST"
+            sed -i 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-7841233102654621~9055541514" />\n    </application>|' "$MANIFEST"
             echo "AdMob App ID injected."
           else
             echo "AdMob App ID already present."
