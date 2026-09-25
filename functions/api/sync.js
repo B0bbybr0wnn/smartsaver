@@ -58,6 +58,16 @@ export async function onRequest(context) {
       ).bind(userId, c.goalName || '', c.amount || 0, c.ts || now).run();
     }
 
+    // Streak
+    const st = body.streak;
+    if (st && typeof st === 'object') {
+      const historyStr = JSON.stringify(Array.isArray(st.history) ? st.history : []);
+      await env.DB.prepare(
+        'INSERT INTO streaks (user_id, current, longest, last_day, history, updated_at) VALUES (?, ?, ?, ?, ?, ?) ' +
+        'ON CONFLICT(user_id) DO UPDATE SET current = excluded.current, longest = excluded.longest, last_day = excluded.last_day, history = excluded.history, updated_at = excluded.updated_at'
+      ).bind(userId, st.current || 0, st.longest || 0, st.lastDay || null, historyStr, now).run();
+    }
+
     return json({
       success: true,
       counts: {
