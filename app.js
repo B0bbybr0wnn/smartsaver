@@ -363,12 +363,12 @@ function refreshSettingsUI() {
   const uCard = document.getElementById('settings-username-card');
   const uVal = document.getElementById('settings-username-val');
   if (uCard && uVal) {
-    if (state.user && state.user.username) {
-      uCard.style.display = 'block';
-      uVal.textContent = '@' + state.user.username;
-    } else {
-      uCard.style.display = 'none';
-    }
+  if (state.user) {
+    uCard.style.display = 'block';
+    uVal.textContent = state.user.username ? ('@' + state.user.username) : 'Not set';
+  } else {
+    uCard.style.display = 'none';
+  }
   }
 }
 function toggleNotifSound() {
