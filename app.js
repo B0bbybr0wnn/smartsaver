@@ -50,6 +50,55 @@ async function initAds() {
   }
 }
 
+// ============ DAILY REMINDER ============
+async function initDailyReminder() {
+  if (!isNative()) return;
+  try {
+    const mod = await import('@capacitor/local-notifications');
+    const LocalNotifications = mod.LocalNotifications;
+
+    const perm = await LocalNotifications.requestPermissions();
+    if (perm.display !== 'granted') {
+      console.warn('Notification permission denied');
+      return;
+    }
+
+    // Cancel any existing reminders first so we don't stack them
+    const pending = await LocalNotifications.getPending();
+    if (pending.notifications && pending.notifications.length > 0) {
+      await LocalNotifications.cancel({ notifications: pending.notifications });
+    }
+
+    // Schedule a daily reminder at 9:00 AM, repeating every day
+    const now = new Date();
+    const first = new Date();
+    first.setHours(9, 0, 0, 0);
+    if (first.getTime() <= now.getTime()) {
+      first.setDate(first.getDate() + 1);
+    }
+
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 1001,
+          title: 'SmartSaver',
+          body: 'Don\'t break your streak — log today\'s spend.',
+          schedule: {
+            at: first,
+            repeats: true,
+            every: 'day'
+          },
+          sound: null,
+          smallIcon: 'ic_stat_icon_config_sample',
+          iconColor: '#22d3ee'
+        }
+      ]
+    });
+    console.log('Daily reminder scheduled for 9:00 AM');
+  } catch (e) {
+    console.warn('Daily reminder setup failed:', e);
+  }
+}
 const CURRENCIES = [
   { code: 'USD' }, { code: 'EUR' }, { code: 'GBP' }, { code: 'JPY' }, { code: 'CNY' },
   { code: 'INR' }, { code: 'NGN' }, { code: 'CAD' }, { code: 'AUD' }, { code: 'AED' },
@@ -1850,6 +1899,7 @@ function startApp() {
   checkAuth();
   handleAuthQuery();
   initAds();
+  initDailyReminder();
   setTimeout(() => {
     state.lastSeenAt = Date.now();
     localStorage.setItem('ss_lastSeenAt', state.lastSeenAt.toString());
