@@ -69,7 +69,7 @@ jobs:
           cp icon-1024.png resources/icon.png
           npx @capacitor/assets generate --android --iconBackgroundColor '#0a0e1a' --iconBackgroundColorDark '#0a0e1a' --splashBackgroundColor '#0a0e1a' --splashBackgroundColorDark '#0a0e1a' || true
 
-      - name: Inject AdMob App ID into AndroidManifest
+      - name: Inject AdMob App ID and notification permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if ! grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$MANIFEST"; then
@@ -77,6 +77,12 @@ jobs:
             echo "AdMob App ID injected."
           else
             echo "AdMob App ID already present."
+          fi
+          if ! grep -q 'POST_NOTIFICATIONS' "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n    <application|' "$MANIFEST"
+            echo "Notification permissions added."
+          else
+            echo "Notification permissions already present."
           fi
 
       - name: Add deep link intent filter to Android manifest
