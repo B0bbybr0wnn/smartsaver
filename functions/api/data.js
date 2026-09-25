@@ -19,6 +19,7 @@ export async function onRequest(context) {
     const decisionsRaw = await env.DB.prepare('SELECT name, price, balance, income, expenses, verdict, result, created_at FROM decisions WHERE user_id = ? ORDER BY created_at DESC LIMIT 100').bind(session.userId).all();
     const spendsRaw = await env.DB.prepare('SELECT amount, note, created_at FROM spends WHERE user_id = ? ORDER BY created_at DESC LIMIT 300').bind(session.userId).all();
     const contribsRaw = await env.DB.prepare('SELECT goal_name, amount, created_at FROM contributions WHERE user_id = ? ORDER BY created_at ASC LIMIT 500').bind(session.userId).all();
+    const streakRaw = await env.DB.prepare('SELECT current, longest, last_day, history FROM streaks WHERE user_id = ?').bind(session.userId).first();
 
     const goals = (goalsRaw.results || []).map(g => ({
       name: g.name, target: g.target, saved: g.saved,
@@ -36,7 +37,19 @@ export async function onRequest(context) {
       goalName: c.goal_name, amount: c.amount, ts: c.created_at
     }));
 
-    return json({ success: true, goals, decisions, spends, contributions }, 200, request);
+    let streak = null;
+    if (streakRaw) {
+      let history = [];
+      try { history = JSON.parse(streakRaw.history || '[]'); } catch (e) { history = []; }
+      streak = {
+        current: streakRaw.current || 0,
+        longest: streakRaw.longest || 0,
+        lastDay: streakRaw.last_day || null,
+        history: history
+      };
+    }
+
+    return json({ success: true, goals, decisions, spends, contributions, streak }, 200, request);
   } catch (e) {
     return json({ error: 'Database error', detail: String(e) }, 500, request);
   }
